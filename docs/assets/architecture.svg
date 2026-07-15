@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#062d57"/><stop offset="1" stop-color="#0b6aa7"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-opacity="0.18"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="#f4f8fc"/>
+  <rect width="1600" height="150" fill="url(#bg)"/>
+  <text x="70" y="72" fill="white" font-size="44" font-family="sans-serif" font-weight="700">不動産業者データベース</text>
+  <text x="70" y="118" fill="#cfe9ff" font-size="24" font-family="sans-serif">関東重点・全国対応 / GitHub → Excel → Google Drive → Notion</text>
+  <g filter="url(#shadow)" font-family="sans-serif">
+    <rect x="70" y="230" rx="24" width="330" height="230" fill="white"/>
+    <text x="110" y="290" fill="#0b4f8a" font-size="30" font-weight="700">1. 調査データ</text>
+    <text x="110" y="345" fill="#223" font-size="22">公式サイト</text><text x="110" y="385" fill="#223" font-size="22">取扱物件</text><text x="110" y="425" fill="#223" font-size="22">問い合わせフォーム</text>
+    <rect x="470" y="230" rx="24" width="330" height="230" fill="white"/>
+    <text x="510" y="290" fill="#0b4f8a" font-size="30" font-weight="700">2. 検証</text>
+    <text x="510" y="345" fill="#223" font-size="22">必須列</text><text x="510" y="385" fill="#223" font-size="22">URL / 重複</text><text x="510" y="425" fill="#223" font-size="22">確認日 / 状態</text>
+    <rect x="870" y="230" rx="24" width="330" height="230" fill="white"/>
+    <text x="910" y="290" fill="#0b4f8a" font-size="30" font-weight="700">3. Excel生成</text>
+    <text x="910" y="345" fill="#223" font-size="22">地域別シート</text><text x="910" y="385" fill="#223" font-size="22">ハイパーリンク</text><text x="910" y="425" fill="#223" font-size="22">広い列幅・フィルター</text>
+    <rect x="1270" y="230" rx="24" width="260" height="230" fill="white"/>
+    <text x="1310" y="290" fill="#0b4f8a" font-size="30" font-weight="700">4. 配信</text>
+    <text x="1310" y="345" fill="#223" font-size="22">GitHub</text><text x="1310" y="385" fill="#223" font-size="22">Drive</text><text x="1310" y="425" fill="#223" font-size="22">Notion</text>
+  </g>
+  <g stroke="#2b8cc4" stroke-width="8" fill="none"><path d="M400 345H470"/><path d="M800 345H870"/><path d="M1200 345H1270"/></g>
+  <g font-family="sans-serif">
+    <rect x="70" y="560" width="1460" height="230" rx="28" fill="#e4f1fb" stroke="#8bc3e6" stroke-width="2"/>
+    <text x="110" y="625" fill="#0b4f8a" font-size="32" font-weight="700">自動化された処理</text>
+    <text x="110" y="685" fill="#223" font-size="24">✓ lint / test / Excel生成　✓ Actions artifact　✓ 週次更新　✓ Google Drive完全同期</text>
+    <text x="110" y="735" fill="#223" font-size="24">✓ Notion API同期　✓ 根拠URL管理　✓ 関東重点 + 全国地域別シート</text>
+  </g>
+  <text x="70" y="855" fill="#52708a" font-size="18" font-family="sans-serif">Generated architecture guide for the project repository</text>
+</svg>

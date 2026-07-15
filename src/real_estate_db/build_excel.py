@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 from collections import Counter
 from pathlib import Path
 
@@ -18,7 +19,6 @@ DEFAULT_INPUT = ROOT / "data" / "real_estate_brokers.csv"
 DEFAULT_OUTPUT_DIR = ROOT / "database"
 
 HEADER_FILL = PatternFill("solid", fgColor="0B4F8A")
-SUBHEADER_FILL = PatternFill("solid", fgColor="D9EAF7")
 HEADER_FONT = Font(color="FFFFFF", bold=True)
 LINK_FONT = Font(color="0563C1", underline="single")
 THIN_GREY = Side(style="thin", color="D9E2F3")
@@ -48,6 +48,11 @@ COLUMN_WIDTHS = {
 }
 
 
+def _table_name(title: str) -> str:
+    digest = hashlib.sha1(title.encode("utf-8"), usedforsecurity=False).hexdigest()[:12]
+    return f"T_{digest}"
+
+
 def _write_sheet(ws, rows: list[dict[str, str]], title: str) -> None:
     ws.title = title[:31]
     ws.append(REQUIRED_COLUMNS)
@@ -70,7 +75,10 @@ def _write_sheet(ws, rows: list[dict[str, str]], title: str) -> None:
             index = REQUIRED_COLUMNS.index(column) + 1
             cell = row_cells[index - 1]
             value = str(cell.value or "")
-            first_url = next((part.strip() for part in value.split("|") if part.strip().startswith("https://")), None)
+            first_url = next(
+                (part.strip() for part in value.split("|") if part.strip().startswith("https://")),
+                None,
+            )
             if first_url:
                 cell.hyperlink = first_url
                 cell.font = LINK_FONT
@@ -82,11 +90,13 @@ def _write_sheet(ws, rows: list[dict[str, str]], title: str) -> None:
     ws.auto_filter.ref = ws.dimensions
     ws.sheet_view.showGridLines = False
     if ws.max_row >= 2:
-        table_name = "T_" + "".join(ch for ch in title if ch.isalnum())[:20]
-        table = Table(displayName=table_name or "T_Data", ref=ws.dimensions)
+        table = Table(displayName=_table_name(title), ref=ws.dimensions)
         table.tableStyleInfo = TableStyleInfo(
-            name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False,
-            showRowStripes=True, showColumnStripes=False
+            name="TableStyleMedium2",
+            showFirstColumn=False,
+            showLastColumn=False,
+            showRowStripes=True,
+            showColumnStripes=False,
         )
         ws.add_table(table)
 

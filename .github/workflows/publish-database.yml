@@ -1,0 +1,52 @@
+name: Publish database
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 1" # Monday 09:00 JST
+  push:
+    branches: [main]
+    paths:
+      - "data/**"
+      - "src/real_estate_db/**"
+      - "requirements.txt"
+      - ".github/workflows/publish-database.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt -e .
+      - name: Validate and generate Excel
+        run: |
+          pytest -q
+          python -m real_estate_db.build_excel
+      - name: Upload database artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-estate-broker-database
+          path: database/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Commit generated database
+        run: |
+          if git status --porcelain database/ | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add database/
+            git commit -m "chore: refresh generated database [skip ci]"
+            git push
+          else
+            echo "No generated changes"
+          fi

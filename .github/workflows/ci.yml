@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt -e .
+      - name: Lint
+        run: ruff check src tests
+      - name: Test
+        run: pytest -q
+      - name: Build database
+        run: python -m real_estate_db.build_excel
+      - name: Upload generated database
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-estate-broker-database
+          path: database/
+          if-no-files-found: error
+          retention-days: 30

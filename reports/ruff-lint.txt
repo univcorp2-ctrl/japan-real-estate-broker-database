@@ -1,0 +1,2 @@
+tests/test_scheduler.py:15:10: B017 Do not assert blind exception: `Exception`
+Found 1 error.

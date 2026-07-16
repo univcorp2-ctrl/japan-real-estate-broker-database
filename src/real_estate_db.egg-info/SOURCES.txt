@@ -8,6 +8,7 @@ src/real_estate_db/daily_runner.py
 src/real_estate_db/enrichment.py
 src/real_estate_db/mlit_source.py
 src/real_estate_db/notion_sync.py
+src/real_estate_db/scheduler.py
 src/real_estate_db/schema.py
 src/real_estate_db/validate.py
 src/real_estate_db.egg-info/PKG-INFO

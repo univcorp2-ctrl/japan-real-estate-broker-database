@@ -52,7 +52,7 @@ def render_launchd_plist(python: Path, runner: Path, root: Path, hour: int, minu
         "stdout": html.escape(str(stdout)),
         "stderr": html.escape(str(stderr)),
     }
-    return f'''<?xml version="1.0" encoding="UTF-8"?>
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -73,7 +73,7 @@ def render_launchd_plist(python: Path, runner: Path, root: Path, hour: int, minu
   <key>StandardErrorPath</key><string>{values["stderr"]}</string>
 </dict>
 </plist>
-'''
+"""
 
 
 def _systemd_quote(value: Path) -> str:

@@ -27,23 +27,28 @@ jobs:
         run: |
           ruff check src tests scripts --fix || true
           ruff format src tests scripts
-      - name: Capture remaining diagnostics
+      - name: Capture diagnostics
         run: |
           mkdir -p reports
           if ruff check src tests scripts --output-format=concise > reports/ruff-lint.txt 2>&1; then
             echo "All Ruff checks passed." > reports/ruff-lint.txt
           fi
+          if pytest -q > reports/pytest.txt 2>&1; then
+            echo "All pytest checks passed." > reports/pytest.txt
+          fi
       - name: Commit fixes and diagnostics
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git status --porcelain src tests scripts reports/ruff-lint.txt | grep -q .; then
-            git add src tests scripts reports/ruff-lint.txt
-            git commit -m "style: apply Ruff fixes and diagnostics [skip ci]"
+          if git status --porcelain src tests scripts reports/ruff-lint.txt reports/pytest.txt | grep -q .; then
+            git add src tests scripts reports/ruff-lint.txt reports/pytest.txt
+            git commit -m "style: apply fixes and test diagnostics [skip ci]"
             git pull --rebase origin main
             git push origin HEAD:main
           else
-            echo "No safe autofixes or diagnostic changes"
+            echo "No fixes or diagnostic changes"
           fi
-      - name: Verify lint after fixes
-        run: ruff check src tests scripts
+      - name: Verify lint and tests
+        run: |
+          ruff check src tests scripts
+          pytest -q

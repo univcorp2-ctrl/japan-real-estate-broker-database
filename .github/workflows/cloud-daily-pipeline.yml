@@ -48,10 +48,31 @@ jobs:
         run: python -m real_estate_db.cloud_pipeline
 
       - name: Validate generated data
+        id: validate
+        continue-on-error: true
+        shell: bash
         run: |
-          ruff check src tests scripts
-          pytest -q
-          python -m real_estate_db.build_excel
+          set +e
+          mkdir -p reports
+          : > reports/cloud-validation.txt
+          echo "## Ruff" >> reports/cloud-validation.txt
+          ruff check src tests scripts >> reports/cloud-validation.txt 2>&1
+          ruff_status=$?
+          echo "" >> reports/cloud-validation.txt
+          echo "## Pytest" >> reports/cloud-validation.txt
+          pytest -q >> reports/cloud-validation.txt 2>&1
+          pytest_status=$?
+          echo "" >> reports/cloud-validation.txt
+          echo "## Excel build" >> reports/cloud-validation.txt
+          python -m real_estate_db.build_excel >> reports/cloud-validation.txt 2>&1
+          build_status=$?
+          echo "" >> reports/cloud-validation.txt
+          echo "ruff_status=${ruff_status}" >> reports/cloud-validation.txt
+          echo "pytest_status=${pytest_status}" >> reports/cloud-validation.txt
+          echo "build_status=${build_status}" >> reports/cloud-validation.txt
+          if [ "$ruff_status" -ne 0 ] || [ "$pytest_status" -ne 0 ] || [ "$build_status" -ne 0 ]; then
+            exit 1
+          fi
 
       - name: Write workflow summary
         if: always()
@@ -68,11 +89,11 @@ jobs:
           print(f"- Database total: {data['master_total_after']}")
           print(f"- Registry warning: {data['registry_error'] or 'none'}")
           PY
-          else
-            echo "- No report was generated" >> "$GITHUB_STEP_SUMMARY"
           fi
+          echo "- Validation: ${{ steps.validate.outcome }}" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload Excel, CSV, queue, state and reports
+      - name: Upload Excel, CSV, queue, state, reports and diagnostics
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: real-estate-broker-database-${{ github.run_number }}
@@ -86,6 +107,7 @@ jobs:
           retention-days: 90
 
       - name: Commit daily database growth
+        if: steps.validate.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -106,15 +128,32 @@ jobs:
             git fetch origin main
             if ! git rebase origin/main; then
               git rebase --abort || true
-              echo "Automatic rebase failed; preserving generated files as workflow artifact" >&2
+              echo "Automatic rebase failed; generated files remain available as workflow artifact" >&2
               exit 1
             fi
             sleep $((attempt * 3))
           done
           exit 1
 
+      - name: Commit validation diagnostics only
+        if: steps.validate.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp reports/cloud-validation.txt /tmp/cloud-validation.txt
+          git reset --hard HEAD
+          mkdir -p reports
+          cp /tmp/cloud-validation.txt reports/cloud-validation.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/cloud-validation.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "diagnostics: cloud pipeline validation failure [skip ci]"
+            git push origin HEAD:main
+          fi
+
       - name: Optional Notion synchronization
-        if: ${{ success() }}
+        if: steps.validate.outcome == 'success'
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATA_SOURCE_ID: ${{ secrets.NOTION_DATA_SOURCE_ID }}
@@ -124,3 +163,9 @@ jobs:
           else
             echo "Notion secrets are not configured; Google Drive publication is unaffected."
           fi
+
+      - name: Fail when validation failed
+        if: steps.validate.outcome == 'failure'
+        run: |
+          echo "Generated data failed validation. See reports/cloud-validation.txt and the uploaded artifact." >&2
+          exit 1

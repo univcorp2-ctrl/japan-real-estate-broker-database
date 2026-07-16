@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts import scheduler
+from real_estate_db import scheduler
 
 
 def test_parse_time() -> None:
@@ -57,4 +57,4 @@ def test_windows_command_contains_daily_time() -> None:
     assert command[:4] == ["schtasks", "/Create", "/TN", scheduler.WINDOWS_TASK]
     assert "/SC" in command
     assert "DAILY" in command
-    assert command[-3:] == ["09:00", "/F"][-3:]
+    assert command[-2:] == ["09:00", "/F"]

@@ -7,7 +7,7 @@ import logging
 import math
 import os
 from dataclasses import asdict, dataclass
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -295,7 +295,7 @@ def run_pipeline(
 ) -> RunReport:
     today = today or date.today()
     today_text = today.isoformat()
-    started = datetime.now(timezone.utc).isoformat()
+    started = datetime.now(UTC).isoformat()
     config = load_json(config_path, {})
     state = load_json(
         STATE_PATH,
@@ -406,7 +406,7 @@ def run_pipeline(
     write_json(STATE_PATH, state)
 
     report.master_total_after = len(master_rows)
-    report.run_finished_at = datetime.now(timezone.utc).isoformat()
+    report.run_finished_at = datetime.now(UTC).isoformat()
     write_report(report)
     logging.info("cloud pipeline report: %s", json.dumps(asdict(report), ensure_ascii=False))
     return report

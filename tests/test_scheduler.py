@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 import pytest
@@ -12,7 +13,7 @@ def test_parse_time() -> None:
 
 @pytest.mark.parametrize("value", ["9", "24:00", "10:60", "aa:bb"])
 def test_parse_time_rejects_invalid_values(value: str) -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(argparse.ArgumentTypeError):
         scheduler.parse_time(value)
 
 

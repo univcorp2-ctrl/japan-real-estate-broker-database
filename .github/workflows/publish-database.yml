@@ -1,21 +1,7 @@
-name: Publish database
+name: Publish database manually
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 0 * * *" # Every day at 09:00 JST
-  push:
-    branches: [main]
-    paths:
-      - "data/**"
-      - "src/real_estate_db/**"
-      - "scripts/**"
-      - "requirements.txt"
-      - ".github/workflows/publish-database.yml"
-
-concurrency:
-  group: publish-database-main
-  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -40,40 +26,9 @@ jobs:
       - name: Upload database artifact
         uses: actions/upload-artifact@v7
         with:
-          name: real-estate-broker-database
+          name: real-estate-broker-database-manual
           path: database/
           if-no-files-found: error
           retention-days: 90
-      - name: Commit generated database
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add database/
-          if git diff --cached --quiet; then
-            echo "No generated changes"
-            exit 0
-          fi
-          git commit -m "chore: refresh generated database [skip ci]"
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-            echo "Push attempt ${attempt} failed; rebasing on latest main"
-            git fetch origin main
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-              git reset --hard origin/main
-              python -m real_estate_db.build_excel
-              git add database/
-              if git diff --cached --quiet; then
-                echo "Latest main already contains generated outputs"
-                exit 0
-              fi
-              git commit -m "chore: refresh generated database [skip ci]"
-            fi
-            sleep $((attempt * 2))
-          done
-          echo "Unable to push generated database after 3 attempts" >&2
-          exit 1
+
+# The scheduled task moved to cloud-daily-pipeline.yml.

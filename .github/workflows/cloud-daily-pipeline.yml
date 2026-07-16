@@ -1,0 +1,126 @@
+name: Cloud daily discovery pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      daily_new_company_limit:
+        description: "Maximum new companies appended in this run"
+        required: false
+        default: "10"
+      daily_enrichment_limit:
+        description: "Maximum companies checked for official sites"
+        required: false
+        default: "8"
+  schedule:
+    - cron: "17 9 * * *"
+      timezone: "Asia/Tokyo"
+
+concurrency:
+  group: cloud-daily-discovery-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  discover-enrich-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DAILY_NEW_COMPANY_LIMIT: ${{ inputs.daily_new_company_limit || '10' }}
+      DAILY_ENRICHMENT_LIMIT: ${{ inputs.daily_enrichment_limit || '8' }}
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -e .
+
+      - name: Run cloud discovery and growth pipeline
+        run: python -m real_estate_db.cloud_pipeline
+
+      - name: Validate generated data
+        run: |
+          ruff check src tests scripts
+          pytest -q
+          python -m real_estate_db.build_excel
+
+      - name: Write workflow summary
+        if: always()
+        run: |
+          echo "## Daily real-estate database run" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f reports/latest.json ]; then
+            python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          data = json.loads(Path("reports/latest.json").read_text(encoding="utf-8"))
+          print(f"- Target: {data['target_authority']} page {data['target_page']}")
+          print(f"- New companies: {data['master_added']}")
+          print(f"- Official sites enriched: {data['enrichment_succeeded']}")
+          print(f"- Database total: {data['master_total_after']}")
+          print(f"- Registry warning: {data['registry_error'] or 'none'}")
+          PY
+          else
+            echo "- No report was generated" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Excel, CSV, queue, state and reports
+        uses: actions/upload-artifact@v7
+        with:
+          name: real-estate-broker-database-${{ github.run_number }}
+          path: |
+            database/
+            data/real_estate_brokers.csv
+            data/research_queue.csv
+            state/discovery_state.json
+            reports/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Commit daily database growth
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ database/ state/ reports/
+          if git diff --cached --quiet; then
+            echo "No database changes to commit"
+            exit 0
+          fi
+          git commit -m "data: daily broker discovery $(date -u +%F) [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Push succeeded. The configured GitHub push webhook now mirrors the repository to Google Drive."
+              exit 0
+            fi
+            echo "Push attempt ${attempt} failed; rebasing on latest main"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "Automatic rebase failed; preserving generated files as workflow artifact" >&2
+              exit 1
+            fi
+            sleep $((attempt * 3))
+          done
+          exit 1
+
+      - name: Optional Notion synchronization
+        if: ${{ success() }}
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATA_SOURCE_ID: ${{ secrets.NOTION_DATA_SOURCE_ID }}
+        run: |
+          if [ -n "${NOTION_TOKEN:-}" ] && [ -n "${NOTION_DATA_SOURCE_ID:-}" ]; then
+            python -m real_estate_db.notion_sync
+          else
+            echo "Notion secrets are not configured; Google Drive publication is unaffected."
+          fi

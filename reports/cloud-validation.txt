@@ -1,0 +1,22 @@
+## Ruff
+I001 [*] Import block is un-sorted or un-formatted
+ --> scripts/scheduler.py:1:1
+  |
+1 | from real_estate_db.scheduler import main
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+help: Organize imports
+
+Found 1 error.
+[*] 1 fixable with the `--fix` option.
+
+## Pytest
+.....................                                                    [100%]
+21 passed in 0.47s
+
+## Excel build
+/home/runner/work/japan-real-estate-broker-database/japan-real-estate-broker-database/database/real_estate_brokers.xlsx
+
+ruff_status=1
+pytest_status=0
+build_status=0

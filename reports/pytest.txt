@@ -1,16 +1,41 @@
+..................F..                                                    [100%]
+=================================== FAILURES ===================================
+___________________ test_windows_command_contains_daily_time ___________________
 
-==================================== ERRORS ====================================
-___________________ ERROR collecting tests/test_scheduler.py ___________________
-ImportError while importing test module '/home/runner/work/japan-real-estate-broker-database/japan-real-estate-broker-database/tests/test_scheduler.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/importlib/__init__.py:90: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-tests/test_scheduler.py:6: in <module>
-    from scripts import scheduler
-E   ModuleNotFoundError: No module named 'scripts'
+    def test_windows_command_contains_daily_time() -> None:
+        command = scheduler.windows_create_command(
+            Path(r"C:\project\.venv\Scripts\python.exe"),
+            Path(r"C:\project\scripts\run_daily.py"),
+            9,
+            0,
+        )
+        assert command[:4] == ["schtasks", "/Create", "/TN", scheduler.WINDOWS_TASK]
+        assert "/SC" in command
+        assert "DAILY" in command
+>       assert command[-3:] == ["09:00", "/F"][-3:]
+E       AssertionError: assert ['/ST', '09:00', '/F'] == ['09:00', '/F']
+E         
+E         At index 0 diff: '/ST' != '09:00'
+E         Left contains one more item: '/F'
+E         
+E         Full diff:
+E           [
+E         +     '/ST',
+E               '09:00',
+E               '/F',
+E           ]
+
+tests/test_scheduler.py:60: AssertionError
 =========================== short test summary info ============================
-ERROR tests/test_scheduler.py
-!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
-1 error in 0.60s
+FAILED tests/test_scheduler.py::test_windows_command_contains_daily_time - AssertionError: assert ['/ST', '09:00', '/F'] == ['09:00', '/F']
+  
+  At index 0 diff: '/ST' != '09:00'
+  Left contains one more item: '/F'
+  
+  Full diff:
+    [
+  +     '/ST',
+        '09:00',
+        '/F',
+    ]
+1 failed, 20 passed in 0.61s

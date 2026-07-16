@@ -7,7 +7,7 @@ name = "real-estate-db"
 version = "0.1.0"
 description = "Source-backed Japanese real-estate broker database generator"
 requires-python = ">=3.11"
-dependencies = ["openpyxl>=3.1,<4", "requests>=2.32,<3"]
+dependencies = ["openpyxl>=3.1,<4", "requests>=2.32,<3", "beautifulsoup4>=4.12,<5"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -16,7 +16,7 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 testpaths = ["tests"]
 
 [tool.ruff]

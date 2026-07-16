@@ -30,7 +30,9 @@ def parse_time(value: str) -> tuple[int, int]:
     return hour, minute
 
 
-def run_command(command: list[str], *, dry_run: bool, check: bool = True) -> subprocess.CompletedProcess[str] | None:
+def run_command(
+    command: list[str], *, dry_run: bool, check: bool = True
+) -> subprocess.CompletedProcess[str] | None:
     print("$", shlex.join(command))
     if dry_run:
         return None
@@ -47,7 +49,7 @@ def render_launchd_plist(python: Path, runner: Path, root: Path, hour: int, minu
         "stdout": html.escape(str(stdout)),
         "stderr": html.escape(str(stderr)),
     }
-    return f'''<?xml version="1.0" encoding="UTF-8"?>
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -68,7 +70,7 @@ def render_launchd_plist(python: Path, runner: Path, root: Path, hour: int, minu
   <key>StandardErrorPath</key><string>{values["stderr"]}</string>
 </dict>
 </plist>
-'''
+"""
 
 
 def _systemd_quote(value: Path) -> str:
@@ -185,7 +187,11 @@ def status(dry_run: bool) -> None:
             check=False,
         )
     elif system == "Windows":
-        run_command(["schtasks", "/Query", "/TN", WINDOWS_TASK, "/V", "/FO", "LIST"], dry_run=dry_run, check=False)
+        run_command(
+            ["schtasks", "/Query", "/TN", WINDOWS_TASK, "/V", "/FO", "LIST"],
+            dry_run=dry_run,
+            check=False,
+        )
     else:
         raise RuntimeError(f"未対応OSです: {system}")
 
@@ -203,7 +209,11 @@ def uninstall(dry_run: bool) -> None:
         user_dir = Path.home() / ".config" / "systemd" / "user"
         service = user_dir / f"{LINUX_NAME}.service"
         timer = user_dir / f"{LINUX_NAME}.timer"
-        run_command(["systemctl", "--user", "disable", "--now", f"{LINUX_NAME}.timer"], dry_run=dry_run, check=False)
+        run_command(
+            ["systemctl", "--user", "disable", "--now", f"{LINUX_NAME}.timer"],
+            dry_run=dry_run,
+            check=False,
+        )
         print(f"remove: {service}")
         print(f"remove: {timer}")
         if not dry_run:
@@ -211,7 +221,9 @@ def uninstall(dry_run: bool) -> None:
             timer.unlink(missing_ok=True)
         run_command(["systemctl", "--user", "daemon-reload"], dry_run=dry_run)
     elif system == "Windows":
-        run_command(["schtasks", "/Delete", "/TN", WINDOWS_TASK, "/F"], dry_run=dry_run, check=False)
+        run_command(
+            ["schtasks", "/Delete", "/TN", WINDOWS_TASK, "/F"], dry_run=dry_run, check=False
+        )
     else:
         raise RuntimeError(f"未対応OSです: {system}")
     print("スケジューラー設定を解除しました。")

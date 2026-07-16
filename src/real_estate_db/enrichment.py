@@ -117,7 +117,9 @@ def _robots_allowed(url: str, user_agent: str, timeout: int, session: requests.S
     parsed = urlparse(url)
     robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
     try:
-        response = session.get(robots_url, timeout=min(timeout, 10), headers={"User-Agent": user_agent})
+        response = session.get(
+            robots_url, timeout=min(timeout, 10), headers={"User-Agent": user_agent}
+        )
         if response.status_code >= 400:
             return True
         parser = RobotFileParser()
@@ -206,7 +208,9 @@ def enrich_company(
     for candidate_url in candidate_urls:
         try:
             sleep(max(delay_seconds, 0))
-            page_html, final_url = _fetch_html(candidate_url, timeout, user_agent, max_bytes, session)
+            page_html, final_url = _fetch_html(
+                candidate_url, timeout, user_agent, max_bytes, session
+            )
         except (requests.RequestException, PermissionError, ValueError):
             continue
         soup = BeautifulSoup(page_html, "html.parser")

@@ -93,7 +93,9 @@ def build_registry_params(authority_code: int, page: int, page_size: int) -> dic
 
 
 def build_registry_url(authority_code: int, page: int, page_size: int) -> str:
-    return f"{MLIT_REGISTRY_URL}?{urlencode(build_registry_params(authority_code, page, page_size))}"
+    return (
+        f"{MLIT_REGISTRY_URL}?{urlencode(build_registry_params(authority_code, page, page_size))}"
+    )
 
 
 def decode_registry_response(response: requests.Response) -> str:

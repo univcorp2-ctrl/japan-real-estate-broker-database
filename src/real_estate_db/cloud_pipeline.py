@@ -335,8 +335,12 @@ def run_pipeline(
         advance_state(config, state, authority_code, page, total, schedule_index)
     except (requests.RequestException, ValueError, KeyError, TimeoutError) as exc:
         report.registry_error = f"{type(exc).__name__}: {exc}"
-        state["consecutive_registry_failures"] = int(state.get("consecutive_registry_failures", 0)) + 1
-        report.warnings.append("公的登録検索に失敗したため、既存キューの公式サイト調査とExcel生成を継続しました。")
+        state["consecutive_registry_failures"] = (
+            int(state.get("consecutive_registry_failures", 0)) + 1
+        )
+        report.warnings.append(
+            "公的登録検索に失敗したため、既存キューの公式サイト調査とExcel生成を継続しました。"
+        )
 
     master_ids = {row["会社ID"] for row in master_rows}
     master_keys = {normalized_master_key(row) for row in master_rows}
@@ -359,7 +363,9 @@ def run_pipeline(
         master_keys.add(master_key)
         report.master_added += 1
 
-    enrichment_limit = int(os.environ.get("DAILY_ENRICHMENT_LIMIT", config["daily_enrichment_limit"]))
+    enrichment_limit = int(
+        os.environ.get("DAILY_ENRICHMENT_LIMIT", config["daily_enrichment_limit"])
+    )
     if config.get("official_search_enabled", True):
         master_by_id = {row["会社ID"]: row for row in master_rows}
         for queue_row in select_enrichment_queue(queue_rows, enrichment_limit):
@@ -393,8 +399,12 @@ def run_pipeline(
             queue_row["メモ"] = result.summary
             report.enrichment_succeeded += 1
 
-    master_rows.sort(key=lambda row: (row.get("地域", ""), row.get("都道府県", ""), row.get("会社名", "")))
-    queue_rows.sort(key=lambda row: (row.get("状態", ""), row.get("発見日", ""), row.get("候補ID", "")))
+    master_rows.sort(
+        key=lambda row: (row.get("地域", ""), row.get("都道府県", ""), row.get("会社名", ""))
+    )
+    queue_rows.sort(
+        key=lambda row: (row.get("状態", ""), row.get("発見日", ""), row.get("候補ID", ""))
+    )
     write_csv(MASTER_PATH, master_rows, REQUIRED_COLUMNS)
     write_csv(QUEUE_PATH, queue_rows, QUEUE_COLUMNS)
     validate_file(MASTER_PATH)
@@ -402,7 +412,9 @@ def run_pipeline(
 
     state["last_run"] = started
     state["total_auto_added"] = int(state.get("total_auto_added", 0)) + report.master_added
-    state["total_auto_enriched"] = int(state.get("total_auto_enriched", 0)) + report.enrichment_succeeded
+    state["total_auto_enriched"] = (
+        int(state.get("total_auto_enriched", 0)) + report.enrichment_succeeded
+    )
     write_json(STATE_PATH, state)
 
     report.master_total_after = len(master_rows)
@@ -413,7 +425,9 @@ def run_pipeline(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Daily cloud discovery and database growth pipeline")
+    parser = argparse.ArgumentParser(
+        description="Daily cloud discovery and database growth pipeline"
+    )
     parser.add_argument("--config", type=Path, default=CONFIG_PATH)
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")

@@ -20,7 +20,9 @@ def _rich_text(value: str) -> dict:
 
 
 def _url(value: str) -> dict:
-    first = next((part.strip() for part in value.split("|") if part.strip().startswith("https://")), None)
+    first = next(
+        (part.strip() for part in value.split("|") if part.strip().startswith("https://")), None
+    )
     return {"url": first}
 
 

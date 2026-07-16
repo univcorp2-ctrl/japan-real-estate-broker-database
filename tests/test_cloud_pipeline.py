@@ -29,7 +29,9 @@ def _write_master(path: Path) -> None:
 
 
 def test_candidate_to_master_has_public_source_link() -> None:
-    candidate = RegistryCandidate(13, "東京都", "123", "新規不動産", "東京都", "https://example.test/mlit")
+    candidate = RegistryCandidate(
+        13, "東京都", "123", "新規不動産", "東京都", "https://example.test/mlit"
+    )
     row = cloud_pipeline.candidate_to_master_row(candidate, "2026-07-16")
     assert row["会社ID"] == "RE-MLIT-13-00000123"
     assert row["根拠URL"] == "https://example.test/mlit"
@@ -83,7 +85,9 @@ def test_pipeline_adds_and_enriches_with_mocked_network(tmp_path: Path, monkeypa
     _write_master(master)
     queue.write_text(",".join(cloud_pipeline.QUEUE_COLUMNS) + "\n", encoding="utf-8")
     state.write_text(
-        json.dumps({"schedule_index": 0, "pages": {}, "total_auto_added": 0, "total_auto_enriched": 0}),
+        json.dumps(
+            {"schedule_index": 0, "pages": {}, "total_auto_added": 0, "total_auto_enriched": 0}
+        ),
         encoding="utf-8",
     )
     config.write_text(
@@ -109,7 +113,9 @@ def test_pipeline_adds_and_enriches_with_mocked_network(tmp_path: Path, monkeypa
     monkeypatch.setattr(cloud_pipeline, "DATABASE_DIR", root / "database")
     monkeypatch.setattr(cloud_pipeline, "REPORTS_DIR", root / "reports")
 
-    candidate = RegistryCandidate(13, "東京都", "123", "新規不動産", "東京都", "https://example.test/mlit")
+    candidate = RegistryCandidate(
+        13, "東京都", "123", "新規不動産", "東京都", "https://example.test/mlit"
+    )
 
     def registry_fetcher(*args, **kwargs):
         return [candidate], 1, candidate.source_url

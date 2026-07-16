@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: real-estate-db
+Version: 0.1.0
+Summary: Source-backed Japanese real-estate broker database generator
+Requires-Python: >=3.11
+License-File: LICENSE
+Requires-Dist: openpyxl<4,>=3.1
+Requires-Dist: requests<3,>=2.32
+Dynamic: license-file

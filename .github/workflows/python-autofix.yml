@@ -1,0 +1,43 @@
+name: Python safe autofix
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: python-safe-autofix-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt -e .
+      - name: Apply safe Ruff fixes and formatting
+        run: |
+          ruff check src tests scripts --fix || true
+          ruff format src tests scripts
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git status --porcelain src tests scripts | grep -q .; then
+            git add src tests scripts
+            git commit -m "style: apply Ruff safe fixes [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          else
+            echo "No safe autofixes required"
+          fi
+      - name: Verify lint after fixes
+        run: ruff check src tests scripts

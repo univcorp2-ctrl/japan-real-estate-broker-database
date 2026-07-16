@@ -3,12 +3,13 @@ name: Publish database
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * 1" # Monday 09:00 JST
+    - cron: "0 0 * * *" # Every day at 09:00 JST
   push:
     branches: [main]
     paths:
       - "data/**"
       - "src/real_estate_db/**"
+      - "scripts/**"
       - "requirements.txt"
       - ".github/workflows/publish-database.yml"
 

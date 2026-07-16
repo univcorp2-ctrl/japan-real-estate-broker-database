@@ -1,6 +1,6 @@
 import sys
 
-import scripts.run_daily as runner
+from real_estate_db import daily_runner as runner
 
 
 def test_daily_runner_uses_project_root() -> None:

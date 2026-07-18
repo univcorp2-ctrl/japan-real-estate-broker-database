@@ -7,7 +7,7 @@ All checks passed!
 _____________ test_pipeline_adds_and_enriches_with_mocked_network ______________
 
 tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_pipeline_adds_and_enriche0')
-monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7faa0c7d1430>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fdb626e7b00>
 
     def test_pipeline_adds_and_enriches_with_mocked_network(tmp_path: Path, monkeypatch) -> None:
         root = tmp_path
@@ -89,7 +89,7 @@ tests/test_cloud_pipeline.py:144: AssertionError
 FAILED tests/test_cloud_pipeline.py::test_pipeline_adds_and_enriches_with_mocked_network - AssertionError: assert False
  +  where False = exists()
  +    where exists = ((PosixPath('/tmp/pytest-of-runner/pytest-0/test_pipeline_adds_and_enriche0') / 'reports') / '2026-07-16.md').exists
-1 failed, 20 passed in 0.54s
+1 failed, 20 passed in 0.55s
 
 ## Excel build
 /home/runner/work/japan-real-estate-broker-database/japan-real-estate-broker-database/database/real_estate_brokers.xlsx

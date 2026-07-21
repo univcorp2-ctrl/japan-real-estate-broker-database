@@ -1,1 +1,88 @@
-All pytest checks passed.
+....F................                                                    [100%]
+=================================== FAILURES ===================================
+_____________ test_pipeline_adds_and_enriches_with_mocked_network ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_pipeline_adds_and_enriche0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fc710bd09b0>
+
+    def test_pipeline_adds_and_enriches_with_mocked_network(tmp_path: Path, monkeypatch) -> None:
+        root = tmp_path
+        (root / "data").mkdir()
+        (root / "state").mkdir()
+        (root / "database").mkdir()
+        (root / "reports").mkdir()
+        (root / "config").mkdir()
+        master = root / "data" / "real_estate_brokers.csv"
+        queue = root / "data" / "research_queue.csv"
+        state = root / "state" / "discovery_state.json"
+        config = root / "config" / "cloud_pipeline.json"
+        _write_master(master)
+        queue.write_text(",".join(cloud_pipeline.QUEUE_COLUMNS) + "\n", encoding="utf-8")
+        state.write_text(
+            json.dumps(
+                {"schedule_index": 0, "pages": {}, "total_auto_added": 0, "total_auto_enriched": 0}
+            ),
+            encoding="utf-8",
+        )
+        config.write_text(
+            json.dumps(
+                {
+                    "daily_new_company_limit": 2,
+                    "daily_enrichment_limit": 2,
+                    "registry_page_size": 50,
+                    "request_timeout_seconds": 1,
+                    "request_delay_seconds": 0,
+                    "max_response_bytes": 1000,
+                    "registry_schedule": [13],
+                    "official_search_enabled": True,
+                    "user_agent": "test",
+                }
+            ),
+            encoding="utf-8",
+        )
+    
+        monkeypatch.setattr(cloud_pipeline, "MASTER_PATH", master)
+        monkeypatch.setattr(cloud_pipeline, "QUEUE_PATH", queue)
+        monkeypatch.setattr(cloud_pipeline, "STATE_PATH", state)
+        monkeypatch.setattr(cloud_pipeline, "DATABASE_DIR", root / "database")
+        monkeypatch.setattr(cloud_pipeline, "REPORTS_DIR", root / "reports")
+    
+        candidate = RegistryCandidate(
+            13, "東京都", "123", "新規不動産", "東京都", "https://example.test/mlit"
+        )
+    
+        def registry_fetcher(*args, **kwargs):
+            return [candidate], 1, candidate.source_url
+    
+        result = EnrichmentResult(
+            official_url="https://new.example/",
+            inquiry_url="https://new.example/contact",
+            service_url="https://new.example/",
+            phone="03-1111-2222",
+            detached="あり",
+            income_property="あり",
+            other_types="土地",
+            contact_form="あり",
+            summary="公式サイトを自動確認",
+            evidence_urls=["https://new.example/"],
+        )
+    
+        def enricher(*args, **kwargs):
+            return result
+    
+        report = cloud_pipeline.run_pipeline(config, date(2026, 7, 16), registry_fetcher, enricher)
+        assert report.master_added == 1
+        assert report.enrichment_succeeded == 1
+        assert report.master_total_after == 2
+        assert (root / "database" / "real_estate_brokers.xlsx").exists()
+>       assert (root / "reports" / "2026-07-16.md").exists()
+E       AssertionError: assert False
+E        +  where False = exists()
+E        +    where exists = ((PosixPath('/tmp/pytest-of-runner/pytest-0/test_pipeline_adds_and_enriche0') / 'reports') / '2026-07-16.md').exists
+
+tests/test_cloud_pipeline.py:144: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_cloud_pipeline.py::test_pipeline_adds_and_enriches_with_mocked_network - AssertionError: assert False
+ +  where False = exists()
+ +    where exists = ((PosixPath('/tmp/pytest-of-runner/pytest-0/test_pipeline_adds_and_enriche0') / 'reports') / '2026-07-16.md').exists
+1 failed, 20 passed in 0.63s

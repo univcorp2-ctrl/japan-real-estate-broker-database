@@ -1,10 +1,11 @@
 {
-  "schedule_index": 1,
+  "schedule_index": 2,
   "pages": {
-    "13": 2
+    "13": 2,
+    "14": 2
   },
-  "last_run": "2026-07-16T10:51:55.231986+00:00",
+  "last_run": "2026-07-21T01:03:09.437917+00:00",
   "consecutive_registry_failures": 0,
-  "total_auto_added": 10,
+  "total_auto_added": 20,
   "total_auto_enriched": 0
 }

@@ -30,7 +30,12 @@ def _write_master(path: Path) -> None:
 
 def test_candidate_to_master_has_public_source_link() -> None:
     candidate = RegistryCandidate(
-        13, "東京都", "123", "新規不動産", "東京都", "https://example.test/mlit"
+        13,
+        "東京都",
+        "123",
+        "新規不動産",
+        "東京都",
+        "https://example.test/mlit",
     )
     row = cloud_pipeline.candidate_to_master_row(candidate, "2026-07-16")
     assert row["会社ID"] == "RE-MLIT-13-00000123"
@@ -71,7 +76,10 @@ def test_next_target_rotates_weighted_schedule(tmp_path: Path) -> None:
     assert state["pages"]["14"] == 4
 
 
-def test_pipeline_adds_and_enriches_with_mocked_network(tmp_path: Path, monkeypatch) -> None:
+def test_pipeline_adds_and_enriches_with_mocked_network(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
     root = tmp_path
     (root / "data").mkdir()
     (root / "state").mkdir()
@@ -86,7 +94,12 @@ def test_pipeline_adds_and_enriches_with_mocked_network(tmp_path: Path, monkeypa
     queue.write_text(",".join(cloud_pipeline.QUEUE_COLUMNS) + "\n", encoding="utf-8")
     state.write_text(
         json.dumps(
-            {"schedule_index": 0, "pages": {}, "total_auto_added": 0, "total_auto_enriched": 0}
+            {
+                "schedule_index": 0,
+                "pages": {},
+                "total_auto_added": 0,
+                "total_auto_enriched": 0,
+            }
         ),
         encoding="utf-8",
     )
@@ -114,7 +127,12 @@ def test_pipeline_adds_and_enriches_with_mocked_network(tmp_path: Path, monkeypa
     monkeypatch.setattr(cloud_pipeline, "REPORTS_DIR", root / "reports")
 
     candidate = RegistryCandidate(
-        13, "東京都", "123", "新規不動産", "東京都", "https://example.test/mlit"
+        13,
+        "東京都",
+        "123",
+        "新規不動産",
+        "東京都",
+        "https://example.test/mlit",
     )
 
     def registry_fetcher(*args, **kwargs):
@@ -136,9 +154,15 @@ def test_pipeline_adds_and_enriches_with_mocked_network(tmp_path: Path, monkeypa
     def enricher(*args, **kwargs):
         return result
 
-    report = cloud_pipeline.run_pipeline(config, date(2026, 7, 16), registry_fetcher, enricher)
+    report = cloud_pipeline.run_pipeline(
+        config,
+        date(2026, 7, 16),
+        registry_fetcher,
+        enricher,
+    )
     assert report.master_added == 1
     assert report.enrichment_succeeded == 1
     assert report.master_total_after == 2
     assert (root / "database" / "real_estate_brokers.xlsx").exists()
-    assert (root / "reports" / "2026-07-16.md").exists()
+    report_day = report.run_started_at[:10]
+    assert (root / "reports" / f"{report_day}.md").exists()

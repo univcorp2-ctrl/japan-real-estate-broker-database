@@ -1,16 +1,16 @@
 {
-  "schedule_index": 9,
+  "schedule_index": 10,
   "pages": {
     "13": 3,
     "14": 3,
-    "11": 2,
+    "11": 3,
     "12": 2,
     "8": 2,
     "9": 2,
     "10": 2
   },
-  "last_run": "2026-07-27T04:04:56.411124+00:00",
+  "last_run": "2026-07-28T03:39:28.159393+00:00",
   "consecutive_registry_failures": 0,
-  "total_auto_added": 90,
-  "total_auto_enriched": 4
+  "total_auto_added": 100,
+  "total_auto_enriched": 5
 }

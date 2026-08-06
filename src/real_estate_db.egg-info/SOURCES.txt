@@ -8,6 +8,8 @@ src/real_estate_db/daily_runner.py
 src/real_estate_db/enrichment.py
 src/real_estate_db/mlit_source.py
 src/real_estate_db/notion_sync.py
+src/real_estate_db/quality.py
+src/real_estate_db/quality_gate.py
 src/real_estate_db/scheduler.py
 src/real_estate_db/schema.py
 src/real_estate_db/validate.py
@@ -21,5 +23,6 @@ tests/test_cloud_pipeline.py
 tests/test_daily_runner.py
 tests/test_enrichment.py
 tests/test_mlit_source.py
+tests/test_quality.py
 tests/test_scheduler.py
 tests/test_validate.py

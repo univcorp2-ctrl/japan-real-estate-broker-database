@@ -14,16 +14,12 @@ def test_phone_extraction_prefers_tel_and_rejects_fax_only() -> None:
 
 def test_public_email_extraction_keeps_role_accounts_only() -> None:
     text = "お問い合わせ info@example.co.jp 担当 yamada@example.co.jp"
-    assert extract_public_emails(text, "https://www.example.co.jp/") == [
-        "info@example.co.jp"
-    ]
+    assert extract_public_emails(text, "https://www.example.co.jp/") == ["info@example.co.jp"]
 
 
 def test_public_email_can_use_published_generic_free_mailbox() -> None:
     text = "ご相談は contact@gmail.com まで"
-    assert extract_public_emails(text, "https://small-estate.example/") == [
-        "contact@gmail.com"
-    ]
+    assert extract_public_emails(text, "https://small-estate.example/") == ["contact@gmail.com"]
 
 
 def test_lead_scoring_prioritizes_direct_acquisition_signals() -> None:

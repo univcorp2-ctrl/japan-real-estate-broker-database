@@ -12,7 +12,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from .quality import (
-    DENY_DOMAINS,
     extract_phone_numbers,
     extract_public_emails,
     is_denied_url,
@@ -403,7 +402,9 @@ def enrich_company(
                     session,
                 )
                 contact_soup = BeautifulSoup(contact_html, "html.parser")
-                combined_text = f"{combined_text} {unescape(contact_soup.get_text(' ', strip=True))}"
+                combined_text = (
+                    f"{combined_text} {unescape(contact_soup.get_text(' ', strip=True))}"
+                )
                 inquiry_url = contact_final_url
                 evidence.append(contact_final_url)
             except (requests.RequestException, PermissionError, ValueError):
@@ -421,7 +422,11 @@ def enrich_company(
         public_email = public_emails[0] if public_emails else "要確認"
         lead_score_value, lead_signals = score_lead_signals(combined_text, form_present)
         grade = lead_grade(lead_score_value)
-        other = [name for name, terms in OTHER_TYPES.items() if any(term in combined_text for term in terms)]
+        other = [
+            name
+            for name, terms in OTHER_TYPES.items()
+            if any(term in combined_text for term in terms)
+        ]
         detached = _yes_no(combined_text, DETACHED_TERMS)
         income = _yes_no(combined_text, INCOME_TERMS)
 

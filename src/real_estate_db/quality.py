@@ -83,9 +83,7 @@ EMAIL_RE = re.compile(
     r"(?<![\w.+-])([A-Z0-9._%+-]{1,64})@([A-Z0-9.-]+\.[A-Z]{2,24})(?![\w.-])",
     re.IGNORECASE,
 )
-PHONE_CANDIDATE_RE = re.compile(
-    r"(?<!\d)(0\d{1,4}(?:[\s\-‐‑‒–—―ー−]*\d{1,4}){1,2})(?!\d)"
-)
+PHONE_CANDIDATE_RE = re.compile(r"(?<!\d)(0\d{1,4}(?:[\s\-‐‑‒–—―ー−]*\d{1,4}){1,2})(?!\d)")
 
 LEAD_SIGNAL_GROUPS: tuple[tuple[str, int, tuple[str, ...]], ...] = (
     (

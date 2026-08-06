@@ -16,7 +16,8 @@ import requests
 from .build_excel import build
 from .enrichment import EnrichmentResult, enrich_company, normalize_company_name
 from .mlit_source import LICENSE_AUTHORITIES, RegistryCandidate, fetch_registry_page
-from .schema import REQUIRED_COLUMNS
+from .quality import audit_rows, is_denied_url, same_site
+from .schema import MASTER_COLUMNS
 from .validate import validate_file
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -41,7 +42,6 @@ QUEUE_COLUMNS = [
     "公式URL候補",
     "メモ",
 ]
-
 PREFECTURE_REGION = {
     "北海道": "北海道・東北",
     "青森県": "北海道・東北",
@@ -107,6 +107,8 @@ class RunReport:
     master_added: int = 0
     enrichment_attempted: int = 0
     enrichment_succeeded: int = 0
+    high_priority_leads: int = 0
+    quality_quarantined: int = 0
     master_total_before: int = 0
     master_total_after: int = 0
     registry_error: str = ""
@@ -152,31 +154,36 @@ def candidate_to_master_row(candidate: RegistryCandidate, today: str) -> dict[st
     prefecture = candidate.prefecture
     region = PREFECTURE_REGION.get(prefecture, "全国")
     priority = "A" if region == "関東" else "B"
-    return {
-        "会社ID": f"RE-{candidate.candidate_id}",
-        "会社名": candidate.company_name,
-        "地域": region,
-        "都道府県": prefecture,
-        "本社所在地": "要確認",
-        "営業エリア": prefecture,
-        "戸建て取扱": "要確認",
-        "収益不動産取扱": "要確認",
-        "その他取扱物件": "要確認",
-        "問い合わせフォーム": "要確認",
-        "公式URL": "要確認",
-        "問い合わせURL": "要確認",
-        "サービスURL": "要確認",
-        "電話番号": "要確認",
-        "特徴・強み": "国土交通省の企業情報検索システムで宅地建物取引業者登録を確認",
-        "根拠URL": candidate.source_url,
-        "確認日": today,
-        "確認状態": "公的登録確認・公式サイト要確認",
-        "優先度": priority,
-        "備考": (
-            f"免許行政庁: {candidate.authority}; 免許番号: 第{candidate.license_number}号; "
-            f"自動追加日: {today}"
-        ),
-    }
+    row = {column: "" for column in MASTER_COLUMNS}
+    row.update(
+        {
+            "会社ID": f"RE-{candidate.candidate_id}",
+            "会社名": candidate.company_name,
+            "地域": region,
+            "都道府県": prefecture,
+            "本社所在地": "要確認",
+            "営業エリア": prefecture,
+            "戸建て取扱": "要確認",
+            "収益不動産取扱": "要確認",
+            "その他取扱物件": "要確認",
+            "問い合わせフォーム": "要確認",
+            "公式URL": "要確認",
+            "問い合わせURL": "要確認",
+            "サービスURL": "要確認",
+            "電話番号": "要確認",
+            "特徴・強み": "国土交通省の企業情報検索システムで宅地建物取引業者登録を確認",
+            "根拠URL": candidate.source_url,
+            "確認日": today,
+            "確認状態": "公的登録確認・公式サイト要確認",
+            "優先度": priority,
+            "備考": (
+                f"免許行政庁: {candidate.authority}; 免許番号: 第{candidate.license_number}号; "
+                f"自動追加日: {today}"
+            ),
+            "事業者区分": "宅地建物取引業者",
+        }
+    )
+    return row
 
 
 def candidate_to_queue_row(candidate: RegistryCandidate, today: str) -> dict[str, str]:
@@ -204,6 +211,59 @@ def append_evidence(current: str, new_urls: list[str]) -> str:
     return " | ".join(values)
 
 
+def _append_note(current: str, note: str) -> str:
+    values = [part.strip() for part in current.split(";") if part.strip()]
+    if note not in values:
+        values.append(note)
+    return "; ".join(values)
+
+
+def quarantine_legacy_rows(
+    master_rows: list[dict[str, str]],
+    queue_rows: list[dict[str, str]],
+) -> int:
+    quarantined_ids: set[str] = set()
+    for issue in audit_rows(master_rows):
+        if issue.severity != "warning":
+            continue
+        row_index = issue.row_number - 2
+        if not 0 <= row_index < len(master_rows):
+            continue
+        row = master_rows[row_index]
+        if issue.field == "公式URL":
+            bad_official_url = row.get("公式URL", "")
+            row["公式URL"] = "要確認"
+            for column in ("問い合わせURL", "サービスURL"):
+                value = row.get(column, "")
+                candidates = [part.strip() for part in value.split("|") if part.strip()]
+                if any(
+                    is_denied_url(candidate) or same_site(candidate, bad_official_url)
+                    for candidate in candidates
+                ):
+                    row[column] = "要確認"
+            row["公式サイト確信度"] = ""
+            row["公式サイトスコア"] = ""
+        elif issue.field == "電話番号":
+            row["電話番号"] = "要確認"
+        else:
+            continue
+        row["確認状態"] = "品質再確認待ち"
+        row["備考"] = _append_note(row.get("備考", ""), "自動品質監査で再確認対象")
+        quarantined_ids.add(row.get("会社ID", ""))
+
+    candidate_ids = {
+        company_id.removeprefix("RE-") for company_id in quarantined_ids if company_id
+    }
+    for queue_row in queue_rows:
+        if queue_row.get("候補ID", "") in candidate_ids:
+            queue_row["状態"] = "品質再確認待ち"
+            queue_row["メモ"] = _append_note(
+                queue_row.get("メモ", ""),
+                "既存公式URLまたは電話番号を品質監査で隔離",
+            )
+    return len(quarantined_ids)
+
+
 def apply_enrichment(row: dict[str, str], result: EnrichmentResult, today: str) -> None:
     row["公式URL"] = result.official_url
     row["問い合わせURL"] = result.inquiry_url
@@ -217,7 +277,16 @@ def apply_enrichment(row: dict[str, str], result: EnrichmentResult, today: str) 
     row["根拠URL"] = append_evidence(row.get("根拠URL", ""), result.evidence_urls)
     row["確認日"] = today
     row["確認状態"] = "自動確認済み" if result.contact_form == "あり" else "一部自動確認"
-    row["備考"] = f"{row.get('備考', '')}; 公式サイト自動確認日: {today}".strip("; ")
+    row["備考"] = _append_note(row.get("備考", ""), f"公式サイト自動確認日: {today}")
+    row["公開メールアドレス"] = result.public_email
+    row["公式サイト確信度"] = result.official_confidence
+    row["公式サイトスコア"] = (
+        str(result.official_score) if result.official_confidence else ""
+    )
+    row["物上げ適性スコア"] = str(result.lead_score) if result.lead_grade else ""
+    row["物上げ適性シグナル"] = result.lead_signals
+    if result.lead_grade:
+        row["優先度"] = result.lead_grade
 
 
 def next_target(config: dict[str, Any], state: dict[str, Any]) -> tuple[int, int, int]:
@@ -273,6 +342,8 @@ def write_report(report: RunReport) -> Path:
         f"- マスターDB追加数: {report.master_added}",
         f"- 公式サイト調査数: {report.enrichment_attempted}",
         f"- 公式サイト確認成功数: {report.enrichment_succeeded}",
+        f"- 物上げ適性Aの新規確認数: {report.high_priority_leads}",
+        f"- 品質隔離数: {report.quality_quarantined}",
         f"- マスターDB件数: {report.master_total_before} → {report.master_total_after}",
         f"- 公的登録検索エラー: {report.registry_error or 'なし'}",
         "",
@@ -312,12 +383,16 @@ def run_pipeline(
     master_rows = validate_file(MASTER_PATH)
     queue_rows = load_csv(QUEUE_PATH)
     report.master_total_before = len(master_rows)
+    report.quality_quarantined = quarantine_legacy_rows(master_rows, queue_rows)
+    if report.quality_quarantined:
+        report.warnings.append(
+            f"既存データ{report.quality_quarantined}件を品質再確認待ちへ隔離しました。"
+        )
 
     authority_code, page, schedule_index = next_target(config, state)
     report.target_authority_code = authority_code
     report.target_authority = LICENSE_AUTHORITIES[authority_code]
     report.target_page = page
-
     session = requests.Session()
     registry_candidates: list[RegistryCandidate] = []
     try:
@@ -346,7 +421,6 @@ def run_pipeline(
     master_keys = {normalized_master_key(row) for row in master_rows}
     queue_ids = {row.get("候補ID", "") for row in queue_rows}
     new_limit = int(os.environ.get("DAILY_NEW_COMPANY_LIMIT", config["daily_new_company_limit"]))
-
     for candidate in registry_candidates:
         if report.master_added >= new_limit:
             break
@@ -398,6 +472,8 @@ def run_pipeline(
             queue_row["公式URL候補"] = result.official_url
             queue_row["メモ"] = result.summary
             report.enrichment_succeeded += 1
+            if result.lead_grade == "A":
+                report.high_priority_leads += 1
 
     master_rows.sort(
         key=lambda row: (row.get("地域", ""), row.get("都道府県", ""), row.get("会社名", ""))
@@ -405,18 +481,16 @@ def run_pipeline(
     queue_rows.sort(
         key=lambda row: (row.get("状態", ""), row.get("発見日", ""), row.get("候補ID", ""))
     )
-    write_csv(MASTER_PATH, master_rows, REQUIRED_COLUMNS)
+    write_csv(MASTER_PATH, master_rows, MASTER_COLUMNS)
     write_csv(QUEUE_PATH, queue_rows, QUEUE_COLUMNS)
     validate_file(MASTER_PATH)
     build(MASTER_PATH, DATABASE_DIR)
-
     state["last_run"] = started
     state["total_auto_added"] = int(state.get("total_auto_added", 0)) + report.master_added
     state["total_auto_enriched"] = (
         int(state.get("total_auto_enriched", 0)) + report.enrichment_succeeded
     )
     write_json(STATE_PATH, state)
-
     report.master_total_after = len(master_rows)
     report.run_finished_at = datetime.now(UTC).isoformat()
     write_report(report)
@@ -439,6 +513,7 @@ def main() -> int:
         return 1
     print(
         f"added={report.master_added} enriched={report.enrichment_succeeded} "
+        f"lead_a={report.high_priority_leads} quarantined={report.quality_quarantined} "
         f"total={report.master_total_after} registry_error={bool(report.registry_error)}"
     )
     return 0

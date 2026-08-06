@@ -4,6 +4,7 @@ import csv
 from pathlib import Path
 from urllib.parse import urlparse
 
+from .quality import audit_rows
 from .schema import REQUIRED_COLUMNS, URL_COLUMNS
 
 
@@ -36,12 +37,15 @@ def validate_rows(rows: list[dict[str, str]]) -> list[str]:
         elif company_id in seen_ids:
             errors.append(f"row {index}: duplicate 会社ID {company_id}")
         seen_ids.add(company_id)
-
         if not row.get("会社名"):
             errors.append(f"row {index}: 会社名 is required")
         for column in URL_COLUMNS:
             if not _valid_https_urls(row.get(column, "")):
                 errors.append(f"row {index}: {column} must contain https URLs separated by |")
+
+    for issue in audit_rows(rows):
+        if issue.severity == "error":
+            errors.append(f"row {issue.row_number}: {issue.field}: {issue.message}")
     return errors
 
 

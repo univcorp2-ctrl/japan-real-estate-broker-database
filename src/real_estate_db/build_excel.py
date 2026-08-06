@@ -11,7 +11,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
-from .schema import REGION_ORDER, REQUIRED_COLUMNS, URL_COLUMNS
+from .schema import MASTER_COLUMNS, REGION_ORDER, URL_COLUMNS
 from .validate import validate_file
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -23,7 +23,6 @@ HEADER_FONT = Font(color="FFFFFF", bold=True)
 LINK_FONT = Font(color="0563C1", underline="single")
 THIN_GREY = Side(style="thin", color="D9E2F3")
 BORDER = Border(left=THIN_GREY, right=THIN_GREY, top=THIN_GREY, bottom=THIN_GREY)
-
 COLUMN_WIDTHS = {
     "会社ID": 13,
     "会社名": 30,
@@ -42,9 +41,15 @@ COLUMN_WIDTHS = {
     "特徴・強み": 46,
     "根拠URL": 52,
     "確認日": 14,
-    "確認状態": 14,
+    "確認状態": 18,
     "優先度": 12,
     "備考": 44,
+    "事業者区分": 22,
+    "公開メールアドレス": 34,
+    "公式サイト確信度": 18,
+    "公式サイトスコア": 18,
+    "物上げ適性スコア": 18,
+    "物上げ適性シグナル": 48,
 }
 
 
@@ -55,7 +60,7 @@ def _table_name(title: str) -> str:
 
 def _write_sheet(ws, rows: list[dict[str, str]], title: str) -> None:
     ws.title = title[:31]
-    ws.append(REQUIRED_COLUMNS)
+    ws.append(MASTER_COLUMNS)
     for cell in ws[1]:
         cell.fill = HEADER_FILL
         cell.font = HEADER_FONT
@@ -64,15 +69,14 @@ def _write_sheet(ws, rows: list[dict[str, str]], title: str) -> None:
     ws.row_dimensions[1].height = 34
 
     for row in rows:
-        ws.append([row.get(column, "") for column in REQUIRED_COLUMNS])
-
+        ws.append([row.get(column, "") for column in MASTER_COLUMNS])
     for row_cells in ws.iter_rows(min_row=2):
         ws.row_dimensions[row_cells[0].row].height = 42
         for cell in row_cells:
             cell.alignment = Alignment(vertical="top", wrap_text=True)
             cell.border = BORDER
         for column in URL_COLUMNS:
-            index = REQUIRED_COLUMNS.index(column) + 1
+            index = MASTER_COLUMNS.index(column) + 1
             cell = row_cells[index - 1]
             value = str(cell.value or "")
             first_url = next(
@@ -82,10 +86,8 @@ def _write_sheet(ws, rows: list[dict[str, str]], title: str) -> None:
             if first_url:
                 cell.hyperlink = first_url
                 cell.font = LINK_FONT
-
-    for index, column in enumerate(REQUIRED_COLUMNS, start=1):
+    for index, column in enumerate(MASTER_COLUMNS, start=1):
         ws.column_dimensions[get_column_letter(index)].width = COLUMN_WIDTHS.get(column, 18)
-
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
     ws.sheet_view.showGridLines = False
@@ -117,22 +119,28 @@ def _write_dictionary(ws) -> None:
         "問い合わせフォーム": "あり / なし / 要確認",
         "公式URL": "会社・ブランド公式サイト",
         "問い合わせURL": "問い合わせフォームまたは問い合わせ案内",
-        "サービスURL": "取扱物件の根拠となるサービスページ",
+        "サービスURL": "取扱物件や買取・仕入れの根拠ページ",
         "電話番号": "公開されている代表・相談窓口",
         "特徴・強み": "公式サイトから確認できる特徴",
-        "根拠URL": "確認に使用した公式ページ。複数は | 区切り",
+        "根拠URL": "確認に使用した公式・公的ページ。複数は | 区切り",
         "確認日": "最終確認日 YYYY-MM-DD",
-        "確認状態": "確認済み / 一部確認 / 要確認",
-        "優先度": "A / B / C",
+        "確認状態": "確認済み / 一部確認 / 品質再確認待ち / 要確認",
+        "優先度": "物上げ適性 A / B / C。未調査時は地域優先度",
         "備考": "注意点、追加調査事項",
+        "事業者区分": "宅建業者、司法書士等の事業者分類",
+        "公開メールアドレス": "公開された法人窓口メール。個人名メールは対象外",
+        "公式サイト確信度": "公式サイト判定の 高 / 中 / 低",
+        "公式サイトスコア": "会社名、所在地、構造化データ等による0〜100点",
+        "物上げ適性スコア": "買取・仕入れ・相続等の公開表記による0〜100点",
+        "物上げ適性シグナル": "スコア加点の根拠となった公開表記カテゴリ",
     }
-    for column in REQUIRED_COLUMNS:
+    for column in MASTER_COLUMNS:
         ws.append([column, descriptions.get(column, "")])
     for cell in ws[1]:
         cell.fill = HEADER_FILL
         cell.font = HEADER_FONT
-    ws.column_dimensions["A"].width = 24
-    ws.column_dimensions["B"].width = 80
+    ws.column_dimensions["A"].width = 28
+    ws.column_dimensions["B"].width = 88
     ws.freeze_panes = "A2"
 
 
@@ -141,6 +149,13 @@ def _write_summary(rows: list[dict[str, str]], output: Path) -> None:
     detached = sum(row["戸建て取扱"] == "あり" for row in rows)
     income = sum(row["収益不動産取扱"] == "あり" for row in rows)
     forms = sum(row["問い合わせフォーム"] == "あり" for row in rows)
+    emails = sum(
+        row.get("公開メールアドレス", "") not in {"", "要確認", "なし", "不明"}
+        for row in rows
+    )
+    lead_a = sum(
+        row.get("優先度") == "A" and bool(row.get("物上げ適性スコア")) for row in rows
+    )
     lines = [
         "# 不動産取扱業者データベース 集計",
         "",
@@ -148,6 +163,8 @@ def _write_summary(rows: list[dict[str, str]], output: Path) -> None:
         f"- 戸建て取扱確認済み: {detached}社",
         f"- 収益不動産取扱確認済み: {income}社",
         f"- 問い合わせフォーム確認済み: {forms}社",
+        f"- 公開法人メール確認済み: {emails}社",
+        f"- 物上げ適性A: {lead_a}社",
         "",
         "## 地域別",
         "",
@@ -170,13 +187,16 @@ def build(input_path: Path, output_dir: Path) -> Path:
         if region_rows:
             _write_sheet(wb.create_sheet(), region_rows, region)
     _write_dictionary(wb.create_sheet())
-
     xlsx_path = output_dir / "real_estate_brokers.xlsx"
     wb.save(xlsx_path)
 
     for filename in ["real_estate_brokers.csv", "notion_import.csv"]:
         with (output_dir / filename).open("w", encoding="utf-8-sig", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=REQUIRED_COLUMNS)
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=MASTER_COLUMNS,
+                extrasaction="ignore",
+            )
             writer.writeheader()
             writer.writerows(rows)
 

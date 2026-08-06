@@ -23,6 +23,17 @@ REQUIRED_COLUMNS = [
     "備考",
 ]
 
+ENRICHMENT_COLUMNS = [
+    "事業者区分",
+    "公開メールアドレス",
+    "公式サイト確信度",
+    "公式サイトスコア",
+    "物上げ適性スコア",
+    "物上げ適性シグナル",
+]
+
+MASTER_COLUMNS = REQUIRED_COLUMNS + ENRICHMENT_COLUMNS
+
 REGION_ORDER = [
     "関東",
     "北海道・東北",
@@ -34,3 +45,4 @@ REGION_ORDER = [
 ]
 
 URL_COLUMNS = ["公式URL", "問い合わせURL", "サービスURL", "根拠URL"]
+SCORE_COLUMNS = ["公式サイトスコア", "物上げ適性スコア"]

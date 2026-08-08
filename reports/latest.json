@@ -1,10 +1,10 @@
 {
-  "run_started_at": "2026-08-07T03:17:45.227043+00:00",
-  "run_finished_at": "2026-08-07T03:17:51.153381+00:00",
-  "target_authority_code": 10,
-  "target_authority": "群馬県",
-  "target_page": 3,
-  "registry_total": 1812,
+  "run_started_at": "2026-08-08T02:23:13.738661+00:00",
+  "run_finished_at": "2026-08-08T02:23:20.332440+00:00",
+  "target_authority_code": 0,
+  "target_authority": "国土交通大臣",
+  "target_page": 1,
+  "registry_total": 3271,
   "registry_candidates_found": 50,
   "queue_added": 10,
   "master_added": 10,
@@ -12,8 +12,8 @@
   "enrichment_succeeded": 0,
   "high_priority_leads": 0,
   "quality_quarantined": 0,
-  "master_total_before": 220,
-  "master_total_after": 230,
+  "master_total_before": 230,
+  "master_total_after": 240,
   "registry_error": "",
   "warnings": []
 }

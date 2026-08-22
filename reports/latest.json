@@ -1,10 +1,10 @@
 {
-  "run_started_at": "2026-08-21T01:59:22.272158+00:00",
-  "run_finished_at": "2026-08-21T01:59:45.822627+00:00",
-  "target_authority_code": 6,
-  "target_authority": "山形県",
+  "run_started_at": "2026-08-22T01:52:08.945373+00:00",
+  "run_finished_at": "2026-08-22T01:52:17.977267+00:00",
+  "target_authority_code": 7,
+  "target_authority": "福島県",
   "target_page": 1,
-  "registry_total": 719,
+  "registry_total": 1328,
   "registry_candidates_found": 50,
   "queue_added": 10,
   "master_added": 10,
@@ -12,8 +12,8 @@
   "enrichment_succeeded": 1,
   "high_priority_leads": 0,
   "quality_quarantined": 0,
-  "master_total_before": 360,
-  "master_total_after": 370,
+  "master_total_before": 370,
+  "master_total_after": 380,
   "registry_error": "",
   "warnings": []
 }

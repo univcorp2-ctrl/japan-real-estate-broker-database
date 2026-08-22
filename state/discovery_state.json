@@ -1,5 +1,5 @@
 {
-  "schedule_index": 35,
+  "schedule_index": 36,
   "pages": {
     "13": 4,
     "14": 4,
@@ -21,10 +21,11 @@
     "2": 2,
     "3": 2,
     "5": 2,
-    "6": 2
+    "6": 2,
+    "7": 2
   },
-  "last_run": "2026-08-21T01:59:22.272158+00:00",
+  "last_run": "2026-08-22T01:52:08.945373+00:00",
   "consecutive_registry_failures": 0,
-  "total_auto_added": 350,
-  "total_auto_enriched": 34
+  "total_auto_added": 360,
+  "total_auto_enriched": 35
 }

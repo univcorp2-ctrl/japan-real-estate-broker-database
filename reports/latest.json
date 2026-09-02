@@ -1,10 +1,10 @@
 {
-  "run_started_at": "2026-09-01T05:14:20.916280+00:00",
-  "run_finished_at": "2026-09-01T05:14:27.695778+00:00",
-  "target_authority_code": 25,
-  "target_authority": "滋賀県",
+  "run_started_at": "2026-09-02T04:39:43.996509+00:00",
+  "run_finished_at": "2026-09-02T04:39:54.993126+00:00",
+  "target_authority_code": 29,
+  "target_authority": "奈良県",
   "target_page": 1,
-  "registry_total": 1129,
+  "registry_total": 1068,
   "registry_candidates_found": 50,
   "queue_added": 10,
   "master_added": 10,
@@ -12,8 +12,8 @@
   "enrichment_succeeded": 1,
   "high_priority_leads": 0,
   "quality_quarantined": 0,
-  "master_total_before": 460,
-  "master_total_after": 470,
+  "master_total_before": 470,
+  "master_total_after": 480,
   "registry_error": "",
   "warnings": []
 }

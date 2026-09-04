@@ -3,7 +3,7 @@ All checks passed!
 
 ## Pytest
 ................................                                         [100%]
-32 passed in 2.29s
+32 passed in 2.22s
 
 ## Excel build
 /home/runner/work/japan-real-estate-broker-database/japan-real-estate-broker-database/database/real_estate_brokers.xlsx
